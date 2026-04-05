@@ -6,10 +6,10 @@ func HandleMCPRequest(req mcp.Request) mcp.Response {
 	switch req.Method {
 
 	case "initialize":
-		return success(req.ID, map[string]interface{}{
+		return protocolSuccess(req.ID, map[string]interface{}{
 			"protocolVersion": "2024-11-05",
 			"capabilities": map[string]interface{}{
-				"tools": map[string]interface{}{}, // 👈 must be object, not bool
+				"tools": map[string]interface{}{},
 			},
 			"serverInfo": map[string]interface{}{
 				"name":    "itinerary-mcp",
@@ -17,8 +17,12 @@ func HandleMCPRequest(req mcp.Request) mcp.Response {
 			},
 		})
 
+	case "notifications/initialized":
+		// This is a notification (no id). Silently ignore — do not send a response.
+		return mcp.Response{}
+
 	case "tools/list":
-		return success(req.ID, map[string]interface{}{
+		return protocolSuccess(req.ID, map[string]interface{}{
 			"tools": ListTools(),
 		})
 
@@ -26,6 +30,15 @@ func HandleMCPRequest(req mcp.Request) mcp.Response {
 		return HandleToolCall(req)
 
 	default:
-		return success(req.ID, nil)
+		return protocolSuccess(req.ID, map[string]interface{}{})
+	}
+}
+
+// protocolSuccess builds a standard JSON-RPC success response for protocol-level methods.
+func protocolSuccess(id interface{}, result interface{}) mcp.Response {
+	return mcp.Response{
+		JSONRPC: "2.0",
+		ID:      id,
+		Result:  result,
 	}
 }
