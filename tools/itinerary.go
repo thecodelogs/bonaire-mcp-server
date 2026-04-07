@@ -3,11 +3,15 @@ package tools
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"mcp-itinerary/mcp"
 	"mcp-itinerary/service"
 )
 
 func ListTools() []map[string]interface{} {
+
+	log.Println("Processing ListTools")
+
 	return []map[string]interface{}{
 		{
 			"name":        "create_itinerary",
@@ -34,10 +38,19 @@ func ListTools() []map[string]interface{} {
 				"required": []string{"id"},
 			},
 		},
+		{
+			"name":        "fetch_all_tours",
+			"description": "Fetch all available tours from the Bonaire API. No arguments required.",
+			"inputSchema": map[string]interface{}{
+				"type":       "object",
+				"properties": map[string]interface{}{},
+			},
+		},
 	}
 }
 
 func HandleToolCall(req mcp.Request) mcp.Response {
+	log.Println("Processing HandleToolCall")
 	name, _ := req.Params["name"].(string)
 	args, _ := req.Params["arguments"].(map[string]interface{})
 
@@ -49,6 +62,10 @@ func HandleToolCall(req mcp.Request) mcp.Response {
 
 	case "get_itinerary":
 		result := service.GetItinerary(args)
+		return toolSuccess(req.ID, result)
+
+	case "fetch_all_tours":
+		result := service.FetchAllTours(args)
 		return toolSuccess(req.ID, result)
 
 	default:

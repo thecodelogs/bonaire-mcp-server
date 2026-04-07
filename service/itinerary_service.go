@@ -1,10 +1,15 @@
 package service
 
 import (
+	"encoding/json"
+	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/google/uuid"
 )
+
+const toursAPI = "https://stage-api.visit-bonaire.com/api/v2/gettours"
 
 var store = make(map[string]interface{})
 
@@ -35,4 +40,26 @@ func GetItinerary(args map[string]interface{}) interface{} {
 	return map[string]string{
 		"error": "not found",
 	}
+}
+
+// FetchAllTours calls the Bonaire API and returns the list of available tours.
+func FetchAllTours(_ map[string]interface{}) interface{} {
+	resp, err := http.Get(toursAPI)
+	if err != nil {
+		return map[string]string{"error": fmt.Sprintf("failed to fetch tours: %v", err)}
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return map[string]string{"error": fmt.Sprintf("API returned status %d", resp.StatusCode)}
+	}
+
+	var body struct {
+		Tours []map[string]interface{} `json:"Tours"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		return map[string]string{"error": fmt.Sprintf("failed to decode response: %v", err)}
+	}
+
+	return body.Tours
 }
